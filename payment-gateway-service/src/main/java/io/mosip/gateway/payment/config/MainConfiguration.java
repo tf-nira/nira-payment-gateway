@@ -18,9 +18,9 @@ public class MainConfiguration {
 	@Bean
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
-                .info(new Info().title("Payment Gateway Service API")
-                .description("Payment Gateway Service application")
-                .version("v0.0.1"));
+                .info(new Info().title("NIRA Payment Gateway Service APIs")
+                .description("NIRA Payment Gateway Service application")
+                .version("v0.0.2"));
     }
 	
 	@Bean
