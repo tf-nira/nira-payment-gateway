@@ -21,6 +21,7 @@ public enum AppErrorMessages {
 	SOAP_JSON_CONVERSION_FAILED(AppConstants.MAIN_APP + "014", "Failed to convert SOAP to JSON"),
 	SOAP_RESPONSE_NULL(AppConstants.MAIN_APP + "015", "SOAP Response is null"),
 	SOAP_AUTHENTICATION_ERROR(AppConstants.MAIN_APP + "016", "Authentication with URA failed"),
+	SOAP_RESPONSE_CONVERSION_JAVA(AppConstants.MAIN_APP + "018", "Failed to convert SOAP to JAVA Object"),
 	NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE(AppConstants.MAIN_APP + "017", "Tax head not found for service"),
 	PRN_GENERATION_FAILED(AppConstants.GENERATE_PRN + "001", "PRN generation failed"),
 	PRN_CHECK_STATUS_FAILED(AppConstants.CHECK_PRN_STATUS + "001", "PRN status check failed"),

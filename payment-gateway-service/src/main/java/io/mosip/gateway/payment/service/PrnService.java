@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -30,6 +31,7 @@ import io.mosip.gateway.payment.constants.AppConstants;
 import io.mosip.gateway.payment.constants.AppErrorMessages;
 import io.mosip.gateway.payment.constants.AppSuccessMessages;
 import io.mosip.gateway.payment.constants.PrnStatusCode;
+import io.mosip.gateway.payment.constants.TaxHeadCode;
 import io.mosip.gateway.payment.dto.CheckPRNStatusRequestDTO;
 import io.mosip.gateway.payment.dto.CheckPRNStatusResponseDTO;
 import io.mosip.gateway.payment.dto.CheckPRNStatusResultDTO;
@@ -121,7 +123,7 @@ public class PrnService {
 		log.info(AppConstants.STAGE_CHECK_PRN_STATUS + ":: getPrnStatus()");
 
 		MainMosipResponseDTO<CheckPRNStatusResultDTO> response = new MainMosipResponseDTO<>();
-		
+
 		response.setVersion(String.valueOf(version));
 		response.setResponsetime(DateTimeFormatter.ofPattern(mosipDateTimeFormat).format(LocalDateTime.now()));
 
@@ -210,11 +212,15 @@ public class PrnService {
 			prnPaymentStatusDTO.setMessage(checkPRNStatusUraResponseDTO.getMessage());
 
 			if (checkPRNStatusUraResponseDTO.getData() != null) {
-				String jsonData = objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData());
-				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonData,
+				
+				org.json.JSONObject jsonObject = new org.json.JSONObject(objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
+				jsonObject.put("processFlow", getProcessFlowForResponse(jsonObject.get("taxHeadCode").toString()));
+
+				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
+				
 				prnPaymentStatusDTO.setData(convertedObject);
-				updatePrnConsumedEntity(prnConsumedEntity, jsonData);
+				updatePrnConsumedEntity(prnConsumedEntity, jsonObject.toString());
 			}
 		}
 		// If PRN doesn't exist in DB - Contact URA API
@@ -223,14 +229,18 @@ public class PrnService {
 			prnPaymentStatusDTO.setMessage(checkPRNStatusUraResponseDTO.getMessage());
 
 			if (checkPRNStatusUraResponseDTO.getData() != null) {
-				String jsonData = objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData());
-				log.info("JSON String: {}", jsonData);
-
-				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonData,
+				
+				org.json.JSONObject jsonObject = new org.json.JSONObject(objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
+				jsonObject.put("processFlow", getProcessFlowForResponse(jsonObject.get("taxHeadCode").toString()));
+				
+				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
+				
 				prnPaymentStatusDTO.setData(convertedObject);
+				
+				
 				String prn = convertedObject.getPrn();
-				saveNewPrnConsumedEntity(jsonData, prn);
+				saveNewPrnConsumedEntity(jsonObject.toString(), prn);
 			} else {
 				prnPaymentStatusDTO.setData(null);
 			}
@@ -238,9 +248,19 @@ public class PrnService {
 		return prnPaymentStatusDTO;
 	}
 
+	private String getProcessFlowForResponse(String taxHeadCode) {
+		
+		PrnTaxHeadEntity existingTaxHeadEntity = prnTaxHeadRepository.findByTaxHeadCode(taxHeadCode);
+		
+		if(!Objects.isNull(existingTaxHeadEntity)) {
+			return existingTaxHeadEntity.getMosipProcess();
+		}
+		return null;
+	}
+
 	private void updatePrnConsumedEntity(PrnConsumedEntity entity, String jsonData) {
 		entity.setPrnData(jsonData);
-		entity.setPrnValid(!jsonData.contains(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode())); 
+		entity.setPrnValid(!jsonData.contains(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode()));
 		entity.setUpBy(createdBySystem);
 		entity.setUpdDatetime(LocalDateTime.now());
 		prnConsumedRepository.save(entity);
@@ -365,7 +385,7 @@ public class PrnService {
 		log.info(AppConstants.STAGE_GENERATE_PRN + ":: generatePrn()");
 
 		MainMosipResponseDTO<PRNGeneratedDTO> response = new MainMosipResponseDTO<PRNGeneratedDTO>();
-		GeneratePRNResponseDTO generatePRNResponseDTO = null;
+		GeneratePRNResponseDTO generatePRNResponseDTO = new GeneratePRNResponseDTO();
 		PRNGeneratedDTO prnGeneratedDTO = new PRNGeneratedDTO();
 
 		response.setVersion(String.valueOf(version));
@@ -381,36 +401,48 @@ public class PrnService {
 
 				PrnTaxHeadEntity existingTaxHeadProcess = prnTaxHeadRepository
 						.findByMosipProcess(requestDTO.getService());
-				
+
 				if (!Objects.isNull(existingTaxHeadProcess)) {
 
-					    generatePRNResponseDTO = getPrnURASOAP(requestDTO, existingTaxHeadProcess);
+					generatePRNResponseDTO = getPrnURASOAP(requestDTO, existingTaxHeadProcess);
+
+					prnGeneratedDTO.setCode(generatePRNResponseDTO.getCode());
+					prnGeneratedDTO.setMessage(generatePRNResponseDTO.getMessage());
+					
+				
+					if (generatePRNResponseDTO.getData() != null) {
 					    
-					    prnGeneratedDTO.setCode(generatePRNResponseDTO.getCode());
-					    prnGeneratedDTO.setMessage(generatePRNResponseDTO.getMessage());
+					    // Check if the data is of type URAGetPRNResultDTO
+					    if (generatePRNResponseDTO.getData() instanceof URAGetPRNResultDTO) {
+					        URAGetPRNResultDTO uraData = (URAGetPRNResultDTO) generatePRNResponseDTO.getData();
+					        
+					        // Manually convert URAGetPRNResultDTO to GeneratePRNResultDTO
+					        GeneratePRNResultDTO convertedObject = new GeneratePRNResultDTO();
+					        convertedObject.setErrorCode(uraData.getErrorCode());
+					        convertedObject.setErrorDesc(uraData.getErrorDesc());
+					        convertedObject.setExpiryDate(uraData.getExpiryDate());
+					        convertedObject.setPrn(uraData.getPrn());
+					        convertedObject.setSearchCode(uraData.getSearchCode());
 
-						if (generatePRNResponseDTO.getData() != null) {
-							String jsonData = objectMapper.writeValueAsString(generatePRNResponseDTO.getData());
-							log.info("JSON String: {}", jsonData);
+					        prnGeneratedDTO.setData(convertedObject);
+					    } else {
+					        log.warn("Unexpected data type: {}", generatePRNResponseDTO.getData().getClass().getName());
+					        prnGeneratedDTO.setData(null);
+					    }
+					} else {
+					    prnGeneratedDTO.setData(null);
+					}
 
-							GeneratePRNResultDTO convertedObject = objectMapper.readValue(jsonData,
-									GeneratePRNResultDTO.class);
-							prnGeneratedDTO.setData(convertedObject);
+					// Update the response based on the payment status code
+					if (generatePRNResponseDTO.getCode().equalsIgnoreCase("200")) {
+						response.setResponse(prnGeneratedDTO);
+					} else {
 
-						} else {
-							prnGeneratedDTO.setData(null);
-						}
-					    
-						// Update the response based on the payment status code
-				        if (generatePRNResponseDTO.getCode().equalsIgnoreCase("200")) {
-				            response.setResponse(prnGeneratedDTO);
-				        } else {
-				            
-				            exception.setMessage(generatePRNResponseDTO.getMessage());
-				            exception.setErrorCode(prnGeneratedDTO.getCode());
-				            explist.add(exception);
-				            response.setErrors(explist);
-				        }
+						exception.setMessage(generatePRNResponseDTO.getMessage());
+						exception.setErrorCode(prnGeneratedDTO.getCode());
+						explist.add(exception);
+						response.setErrors(explist);
+					}
 				} else {
 					exception.setMessage(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getMessage());
 					exception.setErrorCode(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getCode());
@@ -441,8 +473,9 @@ public class PrnService {
 
 		return response;
 	}
-	
-	private GeneratePRNResponseDTO getPrnURASOAP(GeneratePRNRequestDTO requestDTO, PrnTaxHeadEntity existingTaxHeadCode) {
+
+	private GeneratePRNResponseDTO getPrnURASOAP(GeneratePRNRequestDTO requestDTO,
+			PrnTaxHeadEntity existingTaxHeadCode) {
 		log.info(AppConstants.STAGE_GENERATE_PRN + ":: getPrnURASOAP()");
 
 		GeneratePRNResponseDTO responseDTO = new GeneratePRNResponseDTO();
@@ -455,8 +488,11 @@ public class PrnService {
 			uraRequestDTO.setEncryptedConcatenatedUsernamePassword(encryptedCredentials);
 			uraRequestDTO.setReferenceNo("123"); // More clarification on this
 			uraRequestDTO.setTaxHead(existingTaxHeadCode.getTaxHeadCode());
+
+			log.info("Tax Head Code" + existingTaxHeadCode.getTaxHeadCode());
+
 			uraRequestDTO.setTaxPayerName(requestDTO.getFullName());
-			uraRequestDTO.setTaxPayerNIN(requestDTO.getNin());
+			uraRequestDTO.setTaxPayerNIN(requestDTO.getNin()); // More clarification on this
 			uraRequestDTO.setAmount(Double.parseDouble(existingTaxHeadCode.getTaxHeadAmount())); // Need to test this
 
 			// Call the SOAP service
@@ -465,84 +501,113 @@ public class PrnService {
 			if (response != null) {
 				log.info(AppSuccessMessages.SOAP_RESPONSE_SUCCESS.getMessage() + " -> " + response);
 
-				URAGetPRNResultDTO resultDTO = soapServiceUtil.parseGetPRNResponse(response);
+				URAGetPRNResultDTO resultDTO = null;
 				
-				// Check for authentication error
-				if (resultDTO.getErrorCode() != null && resultDTO.getErrorCode().equalsIgnoreCase("APP006")) {
-					log.error(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getCode() + " -> "
-							+ AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getMessage());
-					responseDTO.setCode(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getCode());
-					responseDTO.setMessage(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getMessage());
-				} else {
-					// Handle different error codes
-					String errorCode = resultDTO.getErrorCode();
-
-					switch (errorCode) {
-					case "E000": // Success
-						responseDTO.setCode("200");
-						responseDTO.setMessage(resultDTO.getSearchCode());
-						responseDTO.setData(resultDTO);
-						break;
-
-					case "E002": // Mandatory Field Missing / Conditional Mandatory field Missing
-						log.error(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getCode() + " -> "
-								+ AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getMessage());
-						break;
-
-					case "E007": // Amount cannot be a negative value
-						log.error(AppErrorMessages.URA_NEGATIVE_AMOUNT.getCode() + " -> "
-								+ AppErrorMessages.URA_NEGATIVE_AMOUNT.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_NEGATIVE_AMOUNT.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_NEGATIVE_AMOUNT.getMessage());
-						break;
-
-					case "E008": // Expiry days cannot be a negative value
-						log.error(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getCode() + " -> "
-								+ AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getMessage());
-						break;
-						
-					case "E001": // Data Type Error
-						log.error(AppErrorMessages.URA_DATA_TYPE_ERROR.getCode() + " -> "
-								+ AppErrorMessages.URA_DATA_TYPE_ERROR.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_DATA_TYPE_ERROR.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_DATA_TYPE_ERROR.getMessage());
-						break;
-						
-					case "E005": // Invalid Payment Mode
-						log.error(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getCode() + " -> "
-								+ AppErrorMessages.URA_INVALID_PAYMENT_MODE.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getMessage());
-						break;
-						
-					case "E003": // Invalid Tax Head
-						log.error(AppErrorMessages.URA_INVALID_TAX_HEAD.getCode() + " -> "
-								+ AppErrorMessages.URA_INVALID_TAX_HEAD.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_INVALID_TAX_HEAD.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_INVALID_TAX_HEAD.getMessage());
-						break;
-						
-					case "E006": // Invalid Bank Code
-						log.error(AppErrorMessages.URA_INVALID_BANK_CODE.getCode() + " -> "
-								+ AppErrorMessages.URA_INVALID_BANK_CODE.getMessage());
-						responseDTO.setCode(AppErrorMessages.URA_INVALID_BANK_CODE.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_INVALID_BANK_CODE.getMessage());
-						break;
-
-					default:
-						// Handle unexpected error codes
-						log.error(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode() + " -> "
-								+ AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage() + ": " + errorCode);
-						responseDTO.setCode(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage());
-						break;
-					}
+				try {
+				    resultDTO = soapServiceUtil.parseGetPRNResponse(response);
+				    log.info("Parsed URAGetPRNResultDTO: " + resultDTO);
+				} catch (Exception e) {
+				    log.error("Error parsing SOAP response: " + e.getMessage(), e);
 				}
+
+				if (resultDTO != null) {
+				    // Log the error code to confirm it's being retrieved
+				    log.info("Error Code from resultDTO: " + resultDTO.getErrorCode());
+
+				    // Assign the error code to a variable, and trim any unwanted spaces
+				    String errorCode = resultDTO.getErrorCode() != null ? resultDTO.getErrorCode().trim() : "";
+
+				    log.info("Trimmed Error Code: " + errorCode);
+				    
+				    // Consolidate all error handling in a single switch statement
+				   switch (errorCode) {
+				        case "APP006": // SOAP Authentication Error
+				            log.error(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getCode() + " -> "
+				                    + AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getMessage());
+				            responseDTO.setCode(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getCode());
+				            responseDTO.setMessage(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getMessage());
+				            break;
+
+				        case "E000": // Success
+				            responseDTO.setCode("200");
+				            responseDTO.setMessage(resultDTO.getSearchCode());
+				            responseDTO.setData(resultDTO);
+				            log.info("Case E000: Success - PRN generated -> PRN: {}, Search Code: {}", resultDTO.getPrn(), resultDTO.getSearchCode());
+				            break;
+
+				        case "E002": // Mandatory Field Missing / Conditional Mandatory field Missing
+				            log.error(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getCode() + " -> "
+				                    + AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_MANDATORY_FIELD_MISSING.getMessage());
+				            break;
+
+				        case "E007": // Amount cannot be a negative value
+				            log.error(AppErrorMessages.URA_NEGATIVE_AMOUNT.getCode() + " -> "
+				                    + AppErrorMessages.URA_NEGATIVE_AMOUNT.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_NEGATIVE_AMOUNT.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_NEGATIVE_AMOUNT.getMessage());
+				            break;
+
+				        case "E008": // Expiry days cannot be a negative value
+				            log.error(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getCode() + " -> "
+				                    + AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_NEGATIVE_EXPIRY_DAYS.getMessage());
+				            break;
+
+				        case "E001": // Data Type Error
+				            log.error(AppErrorMessages.URA_DATA_TYPE_ERROR.getCode() + " -> "
+				                    + AppErrorMessages.URA_DATA_TYPE_ERROR.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_DATA_TYPE_ERROR.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_DATA_TYPE_ERROR.getMessage());
+				            break;
+
+				        case "E005": // Invalid Payment Mode
+				            log.error(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getCode() + " -> "
+				                    + AppErrorMessages.URA_INVALID_PAYMENT_MODE.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_INVALID_PAYMENT_MODE.getMessage());
+				            break;
+
+				        case "E003": // Invalid Tax Head
+				            log.error(AppErrorMessages.URA_INVALID_TAX_HEAD.getCode() + " -> "
+				                    + AppErrorMessages.URA_INVALID_TAX_HEAD.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_INVALID_TAX_HEAD.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_INVALID_TAX_HEAD.getMessage());
+				            break;
+
+				        case "E006": // Invalid Bank Code
+				            log.error(AppErrorMessages.URA_INVALID_BANK_CODE.getCode() + " -> "
+				                    + AppErrorMessages.URA_INVALID_BANK_CODE.getMessage());
+				            responseDTO.setCode(AppErrorMessages.URA_INVALID_BANK_CODE.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_INVALID_BANK_CODE.getMessage());
+				            break;
+
+				        default:
+				            // Handle unexpected error codes
+				            log.error(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode() + " -> "
+				                    + AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage() + ": " + errorCode);
+				            responseDTO.setCode(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode());
+				            responseDTO.setMessage(AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage());
+				            break;
+				    }
+				    
+				    
+				} else {
+				    // Handle the case where resultDTO is null
+				    log.error(AppErrorMessages.SOAP_RESPONSE_CONVERSION_JAVA.getCode() + " -> "
+				            + AppErrorMessages.SOAP_RESPONSE_CONVERSION_JAVA.getMessage());
+				    responseDTO.setCode(AppErrorMessages.SOAP_RESPONSE_CONVERSION_JAVA.getCode());
+				    responseDTO.setMessage(AppErrorMessages.SOAP_RESPONSE_CONVERSION_JAVA.getMessage());
+				}
+				
+				log.info("Final GeneratePRNResponseDTO: Code -> {}, Message -> {}, Data -> {}", 
+					    responseDTO.getCode(), responseDTO.getMessage(), responseDTO.getData());
+				
 				return responseDTO;
+
+
 			} else {
 				log.error(AppErrorMessages.SOAP_RESPONSE_NULL.getCode() + " -> "
 						+ AppErrorMessages.SOAP_RESPONSE_NULL.getMessage());
@@ -551,77 +616,78 @@ public class PrnService {
 				return responseDTO;
 			}
 
+			
 		} catch (Exception e) {
 			log.error(AppErrorMessages.PRN_GENERATION_FAILED.getCode() + " -> "
 					+ AppErrorMessages.PRN_GENERATION_FAILED.getMessage() + ": " + e.getMessage());
 			responseDTO.setCode(AppErrorMessages.PRN_GENERATION_FAILED.getCode());
 			responseDTO.setMessage(AppErrorMessages.PRN_GENERATION_FAILED.getMessage());
+			
 			return responseDTO;
 		}
 	}
-	
+
 	/**
 	 * This method consumes (saves) a PRN to database with the registrationId
 	 * 
 	 * @param requestDTO
 	 * @return ConsumePrnResponseDTO
 	 */
-	public MainMosipResponseDTO<ConsumePRNResponseDTO> consumePrnAsUsed(ConsumePRNRequestDTO requestDTO){
+	public MainMosipResponseDTO<ConsumePRNResponseDTO> consumePrnAsUsed(ConsumePRNRequestDTO requestDTO) {
 
 		log.info(AppConstants.STAGE_CONSUME_PRN_AS_USED + ":: consumePrnAsUsed()");
-		
+
 		MainMosipResponseDTO<ConsumePRNResponseDTO> response = new MainMosipResponseDTO<ConsumePRNResponseDTO>();
 		ConsumePRNResponseDTO consumePrnResponseDTO = new ConsumePRNResponseDTO();
-		
+
 		response.setVersion(String.valueOf(version));
 		response.setResponsetime(DateTimeFormatter.ofPattern(mosipDateTimeFormat).format(LocalDateTime.now()));
-		
+
 		List<ExceptionJSONInfoDTO> explist = new ArrayList<ExceptionJSONInfoDTO>();
 		ExceptionJSONInfoDTO exception = new ExceptionJSONInfoDTO();
-		
+
 		try {
-			
-			if(!Objects.isNull(requestDTO) && requestDTO.getPrn() != null && requestDTO.getRegId() != null 
+
+			if (!Objects.isNull(requestDTO) && requestDTO.getPrn() != null && requestDTO.getRegId() != null
 					&& !requestDTO.getPrn().isEmpty() && !requestDTO.getRegId().isEmpty()) {
-			
+
 				consumePrnResponseDTO.setPrnNum(requestDTO.getPrn());
-				
-				PrnTransactionEntity existingPrnTransactionEntity = prnTransactionLogRepository.findByPrn(requestDTO.getPrn());
-				
-				if(!Objects.isNull(existingPrnTransactionEntity)) {
+
+				PrnTransactionEntity existingPrnTransactionEntity = prnTransactionLogRepository
+						.findByPrn(requestDTO.getPrn());
+
+				if (!Objects.isNull(existingPrnTransactionEntity)) {
 					consumePrnResponseDTO.setRegIdTaggedToPrn(existingPrnTransactionEntity.getRegId());
 					consumePrnResponseDTO.setConsumedSucess(false);
 					response.setResponse(consumePrnResponseDTO);
-					
+
 					exception.setMessage("PRN was already consumed");
 					explist.add(exception);
 					response.setErrors(explist);
 					log.error(AppErrorMessages.PRN_ALREADY_CONSUMED.getCode() + " -> "
 							+ AppErrorMessages.PRN_ALREADY_CONSUMED.getMessage());
-				}
-				else {
+				} else {
 					/* save to db for prn_transaction_logs */
-					PrnTransactionEntity  prnTransactionLogEntity = new PrnTransactionEntity();
+					PrnTransactionEntity prnTransactionLogEntity = new PrnTransactionEntity();
 					prnTransactionLogEntity.setPrn(requestDTO.getPrn());
 					prnTransactionLogEntity.setRegId(requestDTO.getRegId());
 					prnTransactionLogEntity.setCrBy(createdBySystem);
 					prnTransactionLogEntity.setCrDatetime(LocalDateTime.now());
 					prnTransactionLogRepository.save(prnTransactionLogEntity);
-					
+
 					log.info(AppSuccessMessages.PRN_CONSUMPTION_SUCCESS.getMessage());
 					consumePrnResponseDTO.setConsumedSucess(true);
 					consumePrnResponseDTO.setRegIdTaggedToPrn(requestDTO.getRegId());
 					response.setResponse(consumePrnResponseDTO);
 				}
-			}
-			else {
+			} else {
 				exception.setMessage("Bad request. Request {} missing.");
 				explist.add(exception);
 				response.setErrors(explist);
 				log.error(AppErrorMessages.NPG_REQUEST_MISSING.getCode() + " -> "
 						+ AppErrorMessages.NPG_REQUEST_MISSING.getMessage());
 			}
-	
+
 		} catch (Exception e) {
 			exception.setMessage(AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getMessage());
 			exception.setErrorCode(AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getCode());
@@ -632,62 +698,62 @@ public class PrnService {
 			log.error(AppErrorMessages.PRN_CONSUMPTION_FAILED.getCode() + " -> "
 					+ AppErrorMessages.PRN_CONSUMPTION_FAILED.getMessage() + ": " + e.getMessage());
 		}
-		
+
 		return response;
 	}
-	
+
 	/**
-	 * This method checks the transcation logs table if the PRN and registrationId are present
+	 * This method checks the transcation logs table if the PRN and registrationId
+	 * are present
 	 * 
 	 * @param isPrnRegInLogsRequestDTO
 	 * @return ispresent status
 	 */
-	public MainMosipResponseDTO<IsPRNRegInLogsResponseDTO> checkIfPrnAndRegIdPresentInLogs(IsPRNRegInLogsRequestDTO isPrnRegInLogsRequestDTO) {
-		
+	public MainMosipResponseDTO<IsPRNRegInLogsResponseDTO> checkIfPrnAndRegIdPresentInLogs(
+			IsPRNRegInLogsRequestDTO isPrnRegInLogsRequestDTO) {
+
 		log.info(AppConstants.STAGE_CONSUME_PRN_AS_USED + ":: checkIfPrnAndRegIdPresentInLogs()");
-		
+
 		MainMosipResponseDTO<IsPRNRegInLogsResponseDTO> response = new MainMosipResponseDTO<IsPRNRegInLogsResponseDTO>();
 		IsPRNRegInLogsResponseDTO isPrnRegInLogsResponseDTO = new IsPRNRegInLogsResponseDTO();
-		
+
 		response.setVersion(String.valueOf(version));
 		response.setResponsetime(DateTimeFormatter.ofPattern(mosipDateTimeFormat).format(LocalDateTime.now()));
-		
+
 		List<ExceptionJSONInfoDTO> explist = new ArrayList<ExceptionJSONInfoDTO>();
 		ExceptionJSONInfoDTO exception = new ExceptionJSONInfoDTO();
-			
+
 		try {
-			
-			if(!Objects.isNull(isPrnRegInLogsRequestDTO) && isPrnRegInLogsRequestDTO.getPrn()!=null &&
-					!isPrnRegInLogsRequestDTO.getPrn().trim().isEmpty()) {
-				PrnTransactionEntity prnTransactionLogEntity = prnTransactionLogRepository.findByPrn(isPrnRegInLogsRequestDTO.getPrn());
-			
-				if(!Objects.isNull(prnTransactionLogEntity)){
-					
+
+			if (!Objects.isNull(isPrnRegInLogsRequestDTO) && isPrnRegInLogsRequestDTO.getPrn() != null
+					&& !isPrnRegInLogsRequestDTO.getPrn().trim().isEmpty()) {
+				PrnTransactionEntity prnTransactionLogEntity = prnTransactionLogRepository
+						.findByPrn(isPrnRegInLogsRequestDTO.getPrn());
+
+				if (!Objects.isNull(prnTransactionLogEntity)) {
+
 					isPrnRegInLogsResponseDTO.setPrn(isPrnRegInLogsRequestDTO.getPrn());
-					isPrnRegInLogsResponseDTO.setPresentInLogs(true);						
+					isPrnRegInLogsResponseDTO.setPresentInLogs(true);
 					exception.setErrorCode(AppErrorMessages.PRN_ALREADY_CONSUMED_BY_DIFFERENT_REGID.getCode());
 					exception.setMessage("PRN already consumed by Reg Id: " + prnTransactionLogEntity.getRegId());
 					explist.add(exception);
 					response.setErrors(explist);
 					log.info(AppErrorMessages.PRN_ALREADY_CONSUMED_BY_DIFFERENT_REGID.getCode() + " -> "
 							+ AppErrorMessages.PRN_ALREADY_CONSUMED_BY_DIFFERENT_REGID.getMessage());
-				}
-				else {
+				} else {
 					isPrnRegInLogsResponseDTO.setPrn(isPrnRegInLogsRequestDTO.getPrn());
 					isPrnRegInLogsResponseDTO.setPresentInLogs(false);
 				}
 				response.setResponse(isPrnRegInLogsResponseDTO);
-			}
-			else {
+			} else {
 				exception.setMessage("Bad request. Request {} missing.");
 				exception.setErrorCode(AppErrorMessages.NPG_REQUEST_MISSING.getCode());
 				explist.add(exception);
 				response.setErrors(explist);
 				log.error(AppErrorMessages.NPG_REQUEST_MISSING.getCode() + " -> "
 						+ AppErrorMessages.NPG_REQUEST_MISSING.getMessage());
-			}	
-		}
-		catch (Exception e) {
+			}
+		} catch (Exception e) {
 			exception.setMessage(AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getMessage());
 			exception.setErrorCode(AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getCode());
 			log.error(AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getCode() + " -> "
@@ -697,52 +763,53 @@ public class PrnService {
 		}
 		return response;
 	}
-	
+
 	/**
 	 * This method returns a list of all consumed PRNs
 	 * 
 	 * @return list of all prns
 	 */
-	public MainMosipResponseDTO<PrnsConsumedListMetaDTO> findAllConsumedPrns(){
-		
+	public MainMosipResponseDTO<PrnsConsumedListMetaDTO> findAllConsumedPrns() {
+
 		log.info(AppConstants.STAGE_CONSUME_PRN_AS_USED + ":: findAllConsumedPrns()");
 		MainMosipResponseDTO<PrnsConsumedListMetaDTO> response = new MainMosipResponseDTO<PrnsConsumedListMetaDTO>();
 		PrnsConsumedListMetaDTO prnsListMetaDTO = new PrnsConsumedListMetaDTO();
-		
+
 		objectMapper = new ObjectMapper();
-		
+
 		response.setVersion(String.valueOf(version));
 		response.setResponsetime(DateTimeFormatter.ofPattern(mosipDateTimeFormat).format(LocalDateTime.now()));
-		
+
 		List<ExceptionJSONInfoDTO> explist = new ArrayList<ExceptionJSONInfoDTO>();
 		ExceptionJSONInfoDTO exception = new ExceptionJSONInfoDTO();
-		
+
 		try {
-			
+
 			List<PrnConsumedEntity> listPrns = prnConsumedRepository.findAll();
-	
-			if(!Objects.isNull(listPrns)) {
-			
+
+			if (!Objects.isNull(listPrns)) {
+
 				List<PrnsConsumedListViewDTO> viewList = new ArrayList<>();
 
-		    	for (PrnConsumedEntity prnTransactionEntity : listPrns) {		
+				for (PrnConsumedEntity prnTransactionEntity : listPrns) {
 					PrnsConsumedListViewDTO viewDto = new PrnsConsumedListViewDTO();
 					viewDto.setPrn(prnTransactionEntity.getPrn());
-					
-					CheckPRNStatusResultDTO	convertedObject =  objectMapper.readValue(prnTransactionEntity.getPrnData(), new TypeReference<CheckPRNStatusResultDTO>() {});					
+
+					CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(prnTransactionEntity.getPrnData(),
+							new TypeReference<CheckPRNStatusResultDTO>() {
+							});
 					viewDto.setPrnData(convertedObject);
 					viewDto.setPrnValid(prnTransactionEntity.isPrnValid());
-					
+
 					viewDto.setDateCreated(prnTransactionEntity.getCrDatetime());
 					viewDto.setDateUpdated(prnTransactionEntity.getUpdDatetime());
 					viewList.add(viewDto);
-		    	}
-		    	
-		    	prnsListMetaDTO.setPrns(viewList);
-				prnsListMetaDTO.setTotalRecords(Integer.toString(listPrns.size()));	
+				}
+
+				prnsListMetaDTO.setPrns(viewList);
+				prnsListMetaDTO.setTotalRecords(Integer.toString(listPrns.size()));
 				response.setResponse(prnsListMetaDTO);
-			}
-			else {				
+			} else {
 				exception.setMessage("No PRNs found");
 				explist.add(exception);
 				response.setErrors(explist);
@@ -757,8 +824,7 @@ public class PrnService {
 					+ AppErrorMessages.NPG_UNKNOWN_EXCEPTION.getMessage() + ": " + ex.getMessage());
 			explist.add(exception);
 			response.setErrors(explist);
-			
-			
+
 		}
 		return response;
 	}

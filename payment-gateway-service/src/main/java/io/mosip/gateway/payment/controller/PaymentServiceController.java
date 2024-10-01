@@ -35,7 +35,6 @@ public class PaymentServiceController {
 		this.prnService = prnService;
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/checkPrnStatus")
 	@Operation(summary = "checkPrnStatus", description = "Fetch the status of a given prn", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<CheckPRNStatusResultDTO>> checkPrnStatus(
@@ -45,7 +44,6 @@ public class PaymentServiceController {
 				.body(prnService.getPrnStatus(prnStatusRequestDTO));
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/generatePrn")
 	@Operation(summary = "generatePRN", description = "Generate a new PRN", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<PRNGeneratedDTO>> generatePRN(	
@@ -54,7 +52,7 @@ public class PaymentServiceController {
 	}
 	
 	
-	/*@PreAuthorize("hasAnyAuthority('ROLE_USER')")
+	/*
 	@GetMapping("/getAllConsumedPrns")
 	@Operation(summary = "getAllConsumedPrns", description = "Fetch all consumed prns", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<PrnsConsumedListMetaDTO>> getAllConsumedPrns(){
@@ -63,7 +61,6 @@ public class PaymentServiceController {
 					.body(prnService.findAllConsumedPrns());
 	}*/
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/consumePrn")
 	@Operation(summary = "consumePrn", description = "Consume PRN as used", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<ConsumePRNResponseDTO>> consumePrn(
@@ -74,7 +71,6 @@ public class PaymentServiceController {
 		
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/checkTranscLogs")
 	@Operation(summary = "checkTranscLogs", description = "Check Transaction Logs for Reg Id and PRN", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<IsPRNRegInLogsResponseDTO>> checkTranscLogs(
