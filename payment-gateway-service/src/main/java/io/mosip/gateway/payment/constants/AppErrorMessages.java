@@ -25,7 +25,7 @@ public enum AppErrorMessages {
 	NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE(AppConstants.MAIN_APP + "017", "Tax head not found for service"),
 	PRN_GENERATION_FAILED(AppConstants.GENERATE_PRN + "001", "PRN generation failed"),
 	PRN_CHECK_STATUS_FAILED(AppConstants.CHECK_PRN_STATUS + "001", "PRN status check failed"),
-	URA_PRN_NOT_FOUND(AppConstants.CHECK_PRN_STATUS + "002", "No Data Found For Supplied Payment Registration Number"),
+	URA_PRN_NOT_FOUND(AppConstants.CHECK_PRN_STATUS + "002", "No data found for supplied PRN"),
 	URA_PRN_EXPIRED(AppConstants.CHECK_PRN_STATUS + "003", "PRN Expired"),
 	URA_PRN_CANCELLED(AppConstants.CHECK_PRN_STATUS + "004", "PRN Cancelled"),
 	URA_PRN_INVALID(AppConstants.CHECK_PRN_STATUS + "005", "PRN Invalid"),

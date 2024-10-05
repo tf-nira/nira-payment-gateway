@@ -14,6 +14,6 @@ public class CheckPRNStatusRequestDTO implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	@JsonProperty("PRN")
+
 	private String prn;
 }

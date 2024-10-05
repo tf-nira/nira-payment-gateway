@@ -17,4 +17,5 @@ public class GeneratePRNResultDTO implements Serializable{/**
     private String expiryDate;
     private String prn;
     private String searchCode;
+    private String amount;
 }

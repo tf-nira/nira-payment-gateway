@@ -353,12 +353,19 @@ public class PrnService {
 						responseDTO.setMessage(AppErrorMessages.URA_PRN_NOT_FOUND.getMessage());
 						break;
 
+					case "PMT001": // PRN not found
+						log.error(AppErrorMessages.URA_PRN_NOT_FOUND.getCode() + " -> "
+								+ AppErrorMessages.URA_PRN_NOT_FOUND.getMessage());
+						responseDTO.setCode(AppErrorMessages.URA_PRN_NOT_FOUND.getCode());
+						responseDTO.setMessage(AppErrorMessages.URA_PRN_NOT_FOUND.getMessage());
+						break;	
+						
 					default:
 						// Handle unexpected error codes
 						log.error(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode() + " -> "
 								+ AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage() + ": " + errorCode);
-						responseDTO.setCode(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode());
-						responseDTO.setMessage(AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage());
+						responseDTO.setCode(resultDTO.getErrorCode());
+						responseDTO.setMessage(resultDTO.getErrorDesc());
 						break;
 					}
 				}
@@ -423,6 +430,7 @@ public class PrnService {
 					        convertedObject.setExpiryDate(uraData.getExpiryDate());
 					        convertedObject.setPrn(uraData.getPrn());
 					        convertedObject.setSearchCode(uraData.getSearchCode());
+					        convertedObject.setAmount(existingTaxHeadProcess.getTaxHeadAmount());
 
 					        prnGeneratedDTO.setData(convertedObject);
 					    } else {
@@ -502,24 +510,13 @@ public class PrnService {
 				log.info(AppSuccessMessages.SOAP_RESPONSE_SUCCESS.getMessage() + " -> " + response);
 
 				URAGetPRNResultDTO resultDTO = null;
+			
+				resultDTO = soapServiceUtil.parseGetPRNResponse(response);
 				
-				try {
-				    resultDTO = soapServiceUtil.parseGetPRNResponse(response);
-				    log.info("Parsed URAGetPRNResultDTO: " + resultDTO);
-				} catch (Exception e) {
-				    log.error("Error parsing SOAP response: " + e.getMessage(), e);
-				}
-
 				if (resultDTO != null) {
-				    // Log the error code to confirm it's being retrieved
-				    log.info("Error Code from resultDTO: " + resultDTO.getErrorCode());
 
-				    // Assign the error code to a variable, and trim any unwanted spaces
-				    String errorCode = resultDTO.getErrorCode() != null ? resultDTO.getErrorCode().trim() : "";
+				   String errorCode = resultDTO.getErrorCode() != null ? resultDTO.getErrorCode().trim() : "";
 
-				    log.info("Trimmed Error Code: " + errorCode);
-				    
-				    // Consolidate all error handling in a single switch statement
 				   switch (errorCode) {
 				        case "APP006": // SOAP Authentication Error
 				            log.error(AppErrorMessages.SOAP_AUTHENTICATION_ERROR.getCode() + " -> "
@@ -532,7 +529,6 @@ public class PrnService {
 				            responseDTO.setCode("200");
 				            responseDTO.setMessage(resultDTO.getSearchCode());
 				            responseDTO.setData(resultDTO);
-				            log.info("Case E000: Success - PRN generated -> PRN: {}, Search Code: {}", resultDTO.getPrn(), resultDTO.getSearchCode());
 				            break;
 
 				        case "E002": // Mandatory Field Missing / Conditional Mandatory field Missing
@@ -588,8 +584,9 @@ public class PrnService {
 				            // Handle unexpected error codes
 				            log.error(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode() + " -> "
 				                    + AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage() + ": " + errorCode);
-				            responseDTO.setCode(AppErrorMessages.URA_UNEXPECTED_ERROR.getCode());
-				            responseDTO.setMessage(AppErrorMessages.URA_UNEXPECTED_ERROR.getMessage());
+				            responseDTO.setCode(resultDTO.getErrorCode());
+				            responseDTO.setMessage(resultDTO.getErrorDesc());
+				            
 				            break;
 				    }
 				    
@@ -733,6 +730,7 @@ public class PrnService {
 				if (!Objects.isNull(prnTransactionLogEntity)) {
 
 					isPrnRegInLogsResponseDTO.setPrn(isPrnRegInLogsRequestDTO.getPrn());
+					isPrnRegInLogsResponseDTO.setRegIdTagged(prnTransactionLogEntity.getRegId());
 					isPrnRegInLogsResponseDTO.setPresentInLogs(true);
 					exception.setErrorCode(AppErrorMessages.PRN_ALREADY_CONSUMED_BY_DIFFERENT_REGID.getCode());
 					exception.setMessage("PRN already consumed by Reg Id: " + prnTransactionLogEntity.getRegId());
