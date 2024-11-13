@@ -1,0 +1,18 @@
+\c payment_gateway 
+
+GRANT CONNECT
+   ON DATABASE payment_gateway
+   TO pgatewayuser;
+
+GRANT USAGE
+   ON SCHEMA pgateway
+   TO pgatewayuser;
+
+GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES
+   ON ALL TABLES IN SCHEMA pgateway
+   TO pgatewayuser;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA pgateway 
+	GRANT SELECT,INSERT,UPDATE,DELETE,REFERENCES ON TABLES TO pgatewayuser;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA pgateway TO pgatewayuser;

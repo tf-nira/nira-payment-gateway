@@ -1,0 +1,29 @@
+name: NIRA Payments gateway build upon a push
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - master
+  
+jobs:
+  build-docker-nira-payments-gateway:
+    strategy:
+      matrix:
+        include:
+          - SERVICE_LOCATION: 'payment-gateway-service'
+            SERVICE_NAME: 'payment-gateway-service'
+      fail-fast: false
+    name: ${{ matrix.SERVICE_NAME }}
+    uses: mosip/kattu/.github/workflows/docker-build.yml@master
+    with:
+      SERVICE_LOCATION: ${{ matrix.SERVICE_LOCATION }}
+      SERVICE_NAME: ${{ matrix.SERVICE_NAME }}
+    secrets:
+      DEV_NAMESPACE_DOCKER_HUB: ${{ secrets.DEV_NAMESPACE_DOCKER_HUB }}
+      ACTOR_DOCKER_HUB: ${{ secrets.ACTOR_DOCKER_HUB }}
+      RELEASE_DOCKER_HUB: ${{ secrets.RELEASE_DOCKER_HUB }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
