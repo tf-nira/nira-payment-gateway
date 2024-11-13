@@ -13,6 +13,15 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>payment-gateway-service</name>
 	<description>Payment Gateway Service</description>
+	<developers>
+    	  <developer>
+            <id>mosip</id>
+            <name>Mosip</name>
+            <email>mosip@example.com</email>
+            <organization>Mosip Organization</organization>
+            <organizationUrl>https://www.mosip.io</organizationUrl>
+          </developer>
+	</developers>
 	<licenses>
           <license>
             <name>MPL 2.0</name>
