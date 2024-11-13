@@ -44,6 +44,12 @@ jobs:
       BUILD_ARTIFACT: payment-gateway-local
     steps:
       - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetches all branches and tags
+      - name: Fetch with Prune
+        run: git fetch --prune --all
       - name: Configure Git for Fetch
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
