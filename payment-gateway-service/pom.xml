@@ -13,9 +13,32 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>payment-gateway-service</name>
 	<description>Payment Gateway Service</description>
+	<url>https://github.com/tf-nira/nira-payment-gateway</url> <!-- Added this line -->
+    <developers>
+        <developer>
+            <id>moonsglw</id>
+            <name>Ibrahim Nkambo</name>
+            <email>mnsglw@gmail.com</email>
+            <organization>NIRA</organization>
+            <organizationUrl>https://www.nira.go.ug</organizationUrl>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>MPL 2.0</name>
+            <url>https://www.mozilla.org/MPL/2.0/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 	<properties>
 		<java.version>11</java.version>
 	</properties>
+	<repositories>
+    <repository>
+        <id>central</id>
+        <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    </repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -180,6 +203,32 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.0.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 </project>
