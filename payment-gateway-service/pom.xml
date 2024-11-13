@@ -16,11 +16,11 @@
 	<url>https://github.com/tf-nira/nira-payment-gateway</url> <!-- Added this line -->
     <developers>
         <developer>
-            <id>moonsglw</id>
-            <name>Ibrahim Nkambo</name>
-            <email>mnsglw@gmail.com</email>
-            <organization>NIRA</organization>
-            <organizationUrl>https://www.nira.go.ug</organizationUrl>
+            <id>mosip</id>
+            <name>Mosip</name>
+            <email>mosip@example.com</email>
+            <organization>Mosip Organization</organization>
+            <organizationUrl>https://www.mosip.io</organizationUrl>
         </developer>
     </developers>
     <licenses>
