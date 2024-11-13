@@ -11,13 +11,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.mosip.gateway.payment.dto.CheckPRNStatusUraRequestDTO;
-import io.mosip.gateway.payment.dto.ConsumePrnRequestDTO;
-import io.mosip.gateway.payment.dto.ConsumePrnResponseDTO;
-import io.mosip.gateway.payment.dto.IsPrnRegInLogsRequestDTO;
-import io.mosip.gateway.payment.dto.IsPrnRegInLogsResponseDTO;
+import io.mosip.gateway.payment.dto.CheckPRNStatusRequestDTO;
+import io.mosip.gateway.payment.dto.CheckPRNStatusResultDTO;
+import io.mosip.gateway.payment.dto.ConsumePRNRequestDTO;
+import io.mosip.gateway.payment.dto.ConsumePRNResponseDTO;
+import io.mosip.gateway.payment.dto.GeneratePRNRequestDTO;
+import io.mosip.gateway.payment.dto.GeneratePRNResponseDTO;
+import io.mosip.gateway.payment.dto.IsPRNRegInLogsRequestDTO;
+import io.mosip.gateway.payment.dto.IsPRNRegInLogsResponseDTO;
 import io.mosip.gateway.payment.dto.MainMosipResponseDTO;
-import io.mosip.gateway.payment.dto.PrnPaymentStatusDTO;
+import io.mosip.gateway.payment.dto.PRNGeneratedDTO;
+import io.mosip.gateway.payment.dto.PRNStatusDTO;
 import io.mosip.gateway.payment.dto.PrnsConsumedListMetaDTO;
 import io.mosip.gateway.payment.service.PrnService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,41 +35,46 @@ public class PaymentServiceController {
 		this.prnService = prnService;
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
-	@PostMapping("/getPrnStatus")
-	@Operation(summary = "getPrnStatus", description = "Fetch the status of a given preregistration Id", tags = "payment-service-controller")
-	public ResponseEntity<PrnPaymentStatusDTO> getPrnStatus(
-			@Valid @RequestBody(required = false) CheckPRNStatusUraRequestDTO prnStatusRequestDTO) throws Exception{
+	@PostMapping("/checkPrnStatus")
+	@Operation(summary = "checkPrnStatus", description = "Fetch the status of a given prn", tags = "payment-service-controller")
+	public ResponseEntity<MainMosipResponseDTO<CheckPRNStatusResultDTO>> checkPrnStatus(
+			@Valid @RequestBody(required = false) CheckPRNStatusRequestDTO prnStatusRequestDTO) throws Exception{
 		
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(prnService.getPrnStatus(prnStatusRequestDTO));
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
+	@PostMapping("/generatePrn")
+	@Operation(summary = "generatePRN", description = "Generate a new PRN", tags = "payment-service-controller")
+	public ResponseEntity<MainMosipResponseDTO<PRNGeneratedDTO>> generatePRN(	
+			@Valid @RequestBody(required = false) GeneratePRNRequestDTO generatePRNRequestDTO) throws Exception {
+		return ResponseEntity.status(HttpStatus.OK).body(prnService.generatePrn(generatePRNRequestDTO));
+	}
+	
+	
+	/*
 	@GetMapping("/getAllConsumedPrns")
 	@Operation(summary = "getAllConsumedPrns", description = "Fetch all consumed prns", tags = "payment-service-controller")
 	public ResponseEntity<MainMosipResponseDTO<PrnsConsumedListMetaDTO>> getAllConsumedPrns(){
 		
 		return ResponseEntity.status(HttpStatus.OK)
 					.body(prnService.findAllConsumedPrns());
-	}
+	}*/
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/consumePrn")
 	@Operation(summary = "consumePrn", description = "Consume PRN as used", tags = "payment-service-controller")
-	public ResponseEntity<MainMosipResponseDTO<ConsumePrnResponseDTO>> consumePrn(
-			@Valid @RequestBody(required = false) ConsumePrnRequestDTO consumePrnRequestDTO) throws Exception{
+	public ResponseEntity<MainMosipResponseDTO<ConsumePRNResponseDTO>> consumePrn(
+			@Valid @RequestBody(required = false) ConsumePRNRequestDTO consumePrnRequestDTO) throws Exception{
 		
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(prnService.consumePrnAsUsed(consumePrnRequestDTO));
 		
 	}
 	
-	@PreAuthorize("hasAnyAuthority('ROLE_USER')")
 	@PostMapping("/checkTranscLogs")
 	@Operation(summary = "checkTranscLogs", description = "Check Transaction Logs for Reg Id and PRN", tags = "payment-service-controller")
-	public ResponseEntity<MainMosipResponseDTO<IsPrnRegInLogsResponseDTO>> checkTranscLogs(
-			@Valid @RequestBody(required = false) IsPrnRegInLogsRequestDTO isPrnRegInLogsRequestDTO) throws Exception{
+	public ResponseEntity<MainMosipResponseDTO<IsPRNRegInLogsResponseDTO>> checkTranscLogs(
+			@Valid @RequestBody(required = false) IsPRNRegInLogsRequestDTO isPrnRegInLogsRequestDTO) throws Exception{
 		
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(prnService.checkIfPrnAndRegIdPresentInLogs(isPrnRegInLogsRequestDTO));

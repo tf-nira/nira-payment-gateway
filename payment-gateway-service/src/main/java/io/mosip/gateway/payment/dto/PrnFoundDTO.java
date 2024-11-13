@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class PrnFoundDTO implements Serializable{
+public class PRNFoundDTO implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	private String prnNumber;

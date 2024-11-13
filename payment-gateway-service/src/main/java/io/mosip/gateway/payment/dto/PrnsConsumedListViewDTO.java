@@ -13,7 +13,7 @@ import lombok.Setter;
 public class PrnsConsumedListViewDTO {
 	
 	private String prn;
-	private CheckPRNStatusUraResultDTO prnData;
+	private CheckPRNStatusResultDTO prnData;
 	private boolean isPrnValid;
 	private LocalDateTime dateCreated;
 	private LocalDateTime dateUpdated;

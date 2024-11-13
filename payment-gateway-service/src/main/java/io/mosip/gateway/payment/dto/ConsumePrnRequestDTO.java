@@ -15,7 +15,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ConsumePrnRequestDTO implements Serializable{
+public class ConsumePRNRequestDTO implements Serializable{
 
 	/**
 	 * 

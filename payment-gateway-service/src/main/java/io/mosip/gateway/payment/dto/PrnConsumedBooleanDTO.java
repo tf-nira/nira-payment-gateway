@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class PrnConsumedBooleanDTO implements Serializable{
+public class PRNConsumedBooleanDTO implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	private boolean prnAlreadyUsed;
