@@ -33,6 +33,12 @@
     <properties>
         <java.version>11</java.version>
     </properties>
+    <repositories>
+    <repository>
+        <id>central</id>
+        <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    </repositories>
     <dependencies>
         <!-- [Dependencies remain the same as provided] -->
     </dependencies>
