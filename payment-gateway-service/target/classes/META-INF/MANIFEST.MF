@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Built-By: VICTUS
+Build-Jdk: 17.0.10
+Implementation-Title: payment-gateway-service
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: io.mosip.gateway
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot
+ -starter-parent/payment-gateway-service
+Created-By: Maven Integration for Eclipse
+
