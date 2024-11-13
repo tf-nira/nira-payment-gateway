@@ -45,7 +45,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: false
+          fetch-depth: 0  # Fetch all branches and tags
+          submodules: true  # Ensure submodules are included
+
       - name: Clear Workspace
         run: rm -rf ${{ github.workspace }}
       
@@ -53,13 +55,15 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Fetches all branches and tags
-      - name: Fetch with Prune
-        run: git fetch --prune --all
-      - name: Configure Git for Fetch
+          submodules: true
+
+      - name: Fetch and Configure Git
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch --prune --unshallow || true
-          git fetch --all --tags || true
+          git fetch --all --tags --prune --unshallow || true
+          git remote prune origin
+          git submodule update --init --recursive
+
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
@@ -68,20 +72,20 @@ jobs:
           server-id: ossrh
           settings-path: ${{ github.workspace }}
 
-      - name: Setup the settings file for ossrh server
-        run: echo "<settings> <servers>  <server>  <id>ossrh</id>    <username>${{secrets.OSSRH_USER}}</username> <password>${{secrets.OSSRH_SECRET}}</password> </server> </servers> <profiles> <profile>     <id>ossrh</id> <activation> <activeByDefault>true</activeByDefault> </activation>  <properties> <gpg.executable>gpg2</gpg.executable> <gpg.passphrase>${{secrets.GPG_SECRET}}</gpg.passphrase> </properties> </profile> <profile> <id>allow-snapshots</id>       <activation><activeByDefault>true</activeByDefault></activation> <repositories> <repository>        <id>snapshots-repo</id> <url>https://oss.sonatype.org/content/repositories/snapshots</url> <releases><enabled>false</enabled></releases> <snapshots><enabled>true</enabled></snapshots> </repository>  <repository>         <id>releases-repo</id>  <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>         <releases><enabled>true</enabled></releases>         <snapshots><enabled>false</enabled></snapshots> </repository> </repositories>  </profile> <profile> <id>sonar</id> <properties>  <sonar.sources>.</sonar.sources> <sonar.host.url>https://sonarcloud.io</sonar.host.url>  </properties> <activation> <activeByDefault>false</activeByDefault> </activation> </profile> </profiles> </settings>" > $GITHUB_WORKSPACE/settings.xml
+      - name: Setup Maven Settings
+        run: echo "<settings> <servers>  <server>  <id>ossrh</id> <username>${{secrets.OSSRH_USER}}</username> <password>${{secrets.OSSRH_SECRET}}</password> </server> </servers> <profiles> <profile> <id>ossrh</id> <activation> <activeByDefault>true</activeByDefault> </activation> <properties> <gpg.executable>gpg2</gpg.executable> <gpg.passphrase>${{secrets.GPG_SECRET}}</gpg.passphrase> </properties> </profile> <profile> <id>allow-snapshots</id> <activation><activeByDefault>true</activeByDefault></activation> <repositories> <repository> <id>snapshots-repo</id> <url>https://oss.sonatype.org/content/repositories/snapshots</url> <releases><enabled>false</enabled></releases> <snapshots><enabled>true</enabled></snapshots> </repository> <repository> <id>releases-repo</id> <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url> <releases><enabled>true</enabled></releases> <snapshots><enabled>false</enabled></snapshots> </repository> </repositories> </profile> <profile> <id>sonar</id> <properties> <sonar.sources>.</sonar.sources> <sonar.host.url>https://sonarcloud.io</sonar.host.url> </properties> <activation> <activeByDefault>false</activeByDefault> </activation> </profile> </profiles> </settings>" > $GITHUB_WORKSPACE/settings.xml
 
-      - name: Build Automationtests with Maven
+      - name: Build with Maven
         run: |
           cd ${{ env.SERVICE_LOCATION }}
           mvn -U -B package -Dmaven.wagon.http.retryHandler.count=2 --file pom.xml -s $GITHUB_WORKSPACE/settings.xml
 
-      - name: Ready the springboot artifacts
+      - name: Zip Artifacts
         if: ${{ !contains(github.ref, 'master') || !contains(github.ref, 'main') }}
         run: |
           cd ${{ env.SERVICE_LOCATION }} && find ./ -path '*/target/*' -exec zip ${{ env.BUILD_ARTIFACT }}.zip {} +
 
-      - name: Upload the springboot jars
+      - name: Upload Artifacts
         if: ${{ !contains(github.ref, 'master') || !contains(github.ref, 'main') }}
         uses: actions/upload-artifact@v3
         with:
@@ -147,3 +151,4 @@ jobs:
       OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
       GPG_SECRET: ${{ secrets.GPG_SECRET }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
