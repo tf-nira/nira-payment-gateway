@@ -50,13 +50,6 @@ jobs:
 
       - name: Clear Workspace
         run: rm -rf ${{ github.workspace }}
-      
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Fetches all branches and tags
-          submodules: true
-          path: nira-payment-gateway
 
       - name: Fetch and Configure Git
         run: |
