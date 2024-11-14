@@ -13,7 +13,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>payment-gateway-service</name>
 	<description>Payment Gateway Service</description>
-	<url>https://github.com/tf-nira/nira-payment-gateway</url> <!-- Added this line -->
+	<url>https://github.com/tf-nira/nira-payment-gateway</url>
     <developers>
         <developer>
             <id>mosip</id>
