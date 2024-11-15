@@ -1,6 +1,14 @@
-name: Manual NIRA Payments build
+name: NIRA Payments gateway build upon a push
 
-on: workflow_dispatch
+on:
+  release:
+    types: [published]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - master
+      - tf_nira_dev
 
 jobs:
   build:
