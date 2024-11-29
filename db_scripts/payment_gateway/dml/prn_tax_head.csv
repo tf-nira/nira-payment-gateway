@@ -1,4 +1,0 @@
-tax_head_code,tax_head_desc,currency,is_tax_head_valid,mosip_process,tax_head_amount,cr_by,cr_dtimes
-CI001,Change Of Information-New ID Required,UGX,TRUE,UPDATE,200000,MOSIP_SYSTEM,now()
-CEID01,Correction of Errors-New ID Required,UGX,TRUE,UPDATE,200000,MOSIP_SYSTEM,now()
-RLID01,Replacement of a Lost ID,UGX,TRUE,REPLACE,50000,MOSIP_SYSTEM,now()
