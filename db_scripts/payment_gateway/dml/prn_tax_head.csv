@@ -1,0 +1,5 @@
+tax_head_code,tax_head_desc,tax_head_amount,currency,is_active,cr_by,cr_dtimes
+CI001,Change Of Information-New ID Required,200000,UGX,TRUE,moonsglw,now()
+CEID01,Correction of Errors-New ID Required,200000,UGX,TRUE,moonsglw,now()
+RLID01,Replacement of a Lost ID,50000,UGX,TRUE,moonsglw,now()
+RDID01,Replacement of a Defaced or Damaged ID,200000,UGX,TRUE,moonsglw,now()

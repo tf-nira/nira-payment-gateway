@@ -1,10 +1,11 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.response;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import org.json.JSONObject;
 
+import io.mosip.gateway.payment.dto.request.CheckPRNStatusResultDTO;
 import lombok.Getter;
 import lombok.Setter;
 

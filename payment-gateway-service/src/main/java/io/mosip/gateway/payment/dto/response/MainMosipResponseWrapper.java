@@ -1,4 +1,4 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.response;
 
 /**
  * This is a dto class for the main overall response wrapper that imitates the MOSIP response wrapper object

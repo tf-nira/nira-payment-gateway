@@ -1,7 +1,10 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.request;
 
 import java.io.Serializable;
 
+import org.json.simple.JSONObject;
+
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,17 +13,15 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @ToString
-public class ConsumePRNResponseDTO implements Serializable{
+public class ConsumePRNRequestDTO implements Serializable{
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private String prnNum;
-	private boolean consumedSucess;
-	private String regIdTaggedToPrn;
-
+	private String regId;
+	private String prn;
 }
-
