@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.mosip.gateway.payment.constants.AppConstants;
@@ -276,9 +277,13 @@ public class PrnService {
 	}
 	
 
-	private void updatePrnConsumedEntity(PrnConsumedEntity entity, String jsonData) {
+	private void updatePrnConsumedEntity(PrnConsumedEntity entity, String jsonData) throws IOException {
+		
+		ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(jsonData);
+		
 		entity.setPrnData(jsonData);
-		entity.setPrnValid(!jsonData.contains(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode()));
+		entity.setPrnValid(jsonNode.get("statusCode").asText().equals(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode()));
 		entity.setUpBy(createdBySystem);
 		entity.setUpdDatetime(LocalDateTime.now());
 		prnConsumedRepository.save(entity);
