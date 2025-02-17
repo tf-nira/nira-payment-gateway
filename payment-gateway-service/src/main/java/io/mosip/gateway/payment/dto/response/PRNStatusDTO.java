@@ -1,5 +1,6 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.response;
 
+import io.mosip.gateway.payment.dto.request.CheckPRNStatusResultDTO;
 import lombok.Getter;
 import lombok.Setter;
 

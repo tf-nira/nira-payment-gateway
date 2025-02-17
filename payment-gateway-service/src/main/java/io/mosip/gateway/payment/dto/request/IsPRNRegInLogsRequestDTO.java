@@ -1,4 +1,4 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.request;
 
 import java.io.Serializable;
 

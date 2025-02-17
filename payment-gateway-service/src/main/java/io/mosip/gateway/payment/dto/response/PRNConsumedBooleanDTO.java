@@ -1,4 +1,4 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.response;
 
 import java.io.Serializable;
 
@@ -7,8 +7,9 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class PRNFoundDTO implements Serializable{
+public class PRNConsumedBooleanDTO implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	private String prnNumber;
+	private boolean prnAlreadyUsed;
+
 }

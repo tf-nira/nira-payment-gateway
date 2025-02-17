@@ -36,7 +36,8 @@ public enum AppErrorMessages {
 	URA_DATA_TYPE_ERROR(AppConstants.GENERATE_PRN + "005", "Data Type Error"),
 	URA_INVALID_PAYMENT_MODE(AppConstants.GENERATE_PRN + "006", "Invalid Payment Mode"),
 	URA_INVALID_TAX_HEAD(AppConstants.GENERATE_PRN + "007", "Invalid Tax Head"),
-	URA_INVALID_BANK_CODE(AppConstants.GENERATE_PRN + "008", "Invalid Bank Code"),;
+	URA_INVALID_BANK_CODE(AppConstants.GENERATE_PRN + "008", "Invalid Bank Code"),
+	PAYABLE_SERVICE_TYPE_NOT_FOUND(AppConstants.MAIN_APP + "019", "Service type not found");
 	
 
 	private final String errorMessage; 

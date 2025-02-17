@@ -1,14 +1,7 @@
-package io.mosip.gateway.payment.dto;
+package io.mosip.gateway.payment.dto.request;
 
 import java.io.Serializable;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.List;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -53,5 +46,5 @@ public class CheckPRNStatusResultDTO implements Serializable {
     private String taxPayerEmail;
     private String taxPayerName;
     private String villageName;
-	private String processFlow; // Helper field to verifying payments from MOSIP modules
+	private List<String> eligiblePaidForServiceTypes; // Helper field to verifying payments from MOSIP modules
 }

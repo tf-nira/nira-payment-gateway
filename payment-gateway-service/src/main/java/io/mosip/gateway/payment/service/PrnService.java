@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,38 +26,42 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.mosip.gateway.payment.constants.AppConstants;
 import io.mosip.gateway.payment.constants.AppErrorMessages;
+import io.mosip.gateway.payment.constants.AppLogMessages;
 import io.mosip.gateway.payment.constants.AppSuccessMessages;
 import io.mosip.gateway.payment.constants.PrnStatusCode;
 import io.mosip.gateway.payment.constants.TaxHeadCode;
-import io.mosip.gateway.payment.dto.CheckPRNStatusRequestDTO;
-import io.mosip.gateway.payment.dto.CheckPRNStatusResponseDTO;
-import io.mosip.gateway.payment.dto.CheckPRNStatusResultDTO;
-import io.mosip.gateway.payment.dto.ConsumePRNRequestDTO;
-import io.mosip.gateway.payment.dto.ConsumePRNResponseDTO;
-import io.mosip.gateway.payment.dto.ExceptionJSONInfoDTO;
-import io.mosip.gateway.payment.dto.GeneratePRNRequestDTO;
-import io.mosip.gateway.payment.dto.GeneratePRNResponseDTO;
-import io.mosip.gateway.payment.dto.GeneratePRNResultDTO;
-import io.mosip.gateway.payment.dto.IsPRNRegInLogsRequestDTO;
-import io.mosip.gateway.payment.dto.IsPRNRegInLogsResponseDTO;
-import io.mosip.gateway.payment.dto.MainMosipResponseDTO;
-import io.mosip.gateway.payment.dto.PRNGeneratedDTO;
-import io.mosip.gateway.payment.dto.PRNStatusDTO;
-import io.mosip.gateway.payment.dto.PrnsConsumedListMetaDTO;
-import io.mosip.gateway.payment.dto.PrnsConsumedListViewDTO;
+import io.mosip.gateway.payment.dto.request.CheckPRNStatusRequestDTO;
+import io.mosip.gateway.payment.dto.request.CheckPRNStatusResultDTO;
+import io.mosip.gateway.payment.dto.request.ConsumePRNRequestDTO;
+import io.mosip.gateway.payment.dto.request.GeneratePRNRequestDTO;
+import io.mosip.gateway.payment.dto.request.IsPRNRegInLogsRequestDTO;
+import io.mosip.gateway.payment.dto.response.CheckPRNStatusResponseDTO;
+import io.mosip.gateway.payment.dto.response.ConsumePRNResponseDTO;
+import io.mosip.gateway.payment.dto.response.ExceptionJSONInfoDTO;
+import io.mosip.gateway.payment.dto.response.GeneratePRNResponseDTO;
+import io.mosip.gateway.payment.dto.response.GeneratePRNResultDTO;
+import io.mosip.gateway.payment.dto.response.IsPRNRegInLogsResponseDTO;
+import io.mosip.gateway.payment.dto.response.MainMosipResponseDTO;
+import io.mosip.gateway.payment.dto.response.PRNGeneratedDTO;
+import io.mosip.gateway.payment.dto.response.PRNStatusDTO;
+import io.mosip.gateway.payment.dto.response.PrnsConsumedListMetaDTO;
+import io.mosip.gateway.payment.dto.response.PrnsConsumedListViewDTO;
 import io.mosip.gateway.payment.dto.ura.URACheckPRNStatusResultDTO;
 import io.mosip.gateway.payment.dto.ura.URAGetPRNResultDTO;
 import io.mosip.gateway.payment.dto.ura.URASoapCheckPRNStatusRequestDTO;
 import io.mosip.gateway.payment.dto.ura.URASoapGeneratePRNRequestDTO;
+import io.mosip.gateway.payment.entity.PayableServiceTypeEntity;
 import io.mosip.gateway.payment.entity.PrnConsumedEntity;
 import io.mosip.gateway.payment.entity.PrnTaxHeadEntity;
 import io.mosip.gateway.payment.entity.PrnTransactionEntity;
 import io.mosip.gateway.payment.repository.PrnTransactionRepository;
 import io.mosip.gateway.payment.util.URASoapServiceUtil;
+import io.mosip.gateway.payment.repository.PayableServiceTypeRepository;
 import io.mosip.gateway.payment.repository.PrnConsumedRepository;
 import io.mosip.gateway.payment.repository.PrnTaxHeadRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +85,9 @@ public class PrnService {
 
 	@Autowired
 	private PrnTaxHeadRepository prnTaxHeadRepository;
+	
+	@Autowired
+	private PayableServiceTypeRepository payableServiceTypeRepository;
 
 	@Autowired
 	private URASoapServiceUtil soapServiceUtil;
@@ -142,13 +150,19 @@ public class PrnService {
 
 					if (!Objects.isNull(checkingAgainstPrnConsumedEntity)) {
 						if (checkingAgainstPrnConsumedEntity.isPrnValid()) {
+							log.info(AppConstants.STAGE_CHECK_PRN_STATUS + " -> " + 
+									AppLogMessages.PRN_STATUS_CHECK_PRN_IN_DB_VALID.getMessage());
 							prnPaymentStatusDTO = prepareResponseForPrnStatus(checkingAgainstPrnConsumedEntity, null);
 						} else {
+							log.info(AppConstants.STAGE_CHECK_PRN_STATUS + " -> " + 
+									AppLogMessages.PRN_STATUS_CHECK_PRN_IN_DB_NOT_VALID.getMessage());
 							checkPRNStatusUraResponseDTO = checkPrnStatusURASOAP(prnStatusRequestDTO);
 							prnPaymentStatusDTO = prepareResponseForPrnStatus(checkingAgainstPrnConsumedEntity,
 									checkPRNStatusUraResponseDTO);
 						}
 					} else {
+						log.info(AppConstants.STAGE_CHECK_PRN_STATUS + " -> " + 
+								AppLogMessages.PRN_STATUS_CHECK_PRN_NOT_IN_DB.getMessage());
 						checkPRNStatusUraResponseDTO = checkPrnStatusURASOAP(prnStatusRequestDTO);
 						prnPaymentStatusDTO = prepareResponseForPrnStatus(null, checkPRNStatusUraResponseDTO);
 					}
@@ -214,7 +228,7 @@ public class PrnService {
 			if (checkPRNStatusUraResponseDTO.getData() != null) {
 				
 				org.json.JSONObject jsonObject = new org.json.JSONObject(objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
-				jsonObject.put("processFlow", getProcessFlowForResponse(jsonObject.get("taxHeadCode").toString()));
+				jsonObject.put("eligiblePaidForServiceTypes", getServiceTypesForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
 
 				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
@@ -231,7 +245,7 @@ public class PrnService {
 			if (checkPRNStatusUraResponseDTO.getData() != null) {
 				
 				org.json.JSONObject jsonObject = new org.json.JSONObject(objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
-				jsonObject.put("processFlow", getProcessFlowForResponse(jsonObject.get("taxHeadCode").toString()));
+				jsonObject.put("eligiblePaidForServiceTypes", getServiceTypesForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
 				
 				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
@@ -248,7 +262,7 @@ public class PrnService {
 		return prnPaymentStatusDTO;
 	}
 
-	private String getProcessFlowForResponse(String taxHeadCode) {
+	/*private String getProcessFlowForResponse(String taxHeadCode) {
 		
 		PrnTaxHeadEntity existingTaxHeadEntity = prnTaxHeadRepository.findByTaxHeadCode(taxHeadCode);
 		
@@ -256,11 +270,20 @@ public class PrnService {
 			return existingTaxHeadEntity.getMosipProcess();
 		}
 		return null;
+	}*/
+	
+	private List<String> getServiceTypesForTaxHeadCode(String taxHeadCode){
+		return payableServiceTypeRepository.findDistinctServiceTypeByTaxHeadCode(taxHeadCode);	
 	}
+	
 
-	private void updatePrnConsumedEntity(PrnConsumedEntity entity, String jsonData) {
+	private void updatePrnConsumedEntity(PrnConsumedEntity entity, String jsonData) throws IOException {
+		
+		ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(jsonData);
+		
 		entity.setPrnData(jsonData);
-		entity.setPrnValid(!jsonData.contains(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode()));
+		entity.setPrnValid(jsonNode.get("statusCode").asText().equals(PrnStatusCode.PRN_STATUS_RECEIVED_CREDITED.getStatusCode()));
 		entity.setUpBy(createdBySystem);
 		entity.setUpdDatetime(LocalDateTime.now());
 		prnConsumedRepository.save(entity);
@@ -268,6 +291,7 @@ public class PrnService {
 
 	private void saveNewPrnConsumedEntity(String jsonData, String prn) {
 		PrnConsumedEntity newConsumedEntity = new PrnConsumedEntity();
+		newConsumedEntity.setId(UUID.randomUUID().toString());
 		newConsumedEntity.setPrn(prn);
 		newConsumedEntity.setPrnData(jsonData);
 		newConsumedEntity.setCrBy(createdBySystem);
@@ -406,56 +430,70 @@ public class PrnService {
 					&& requestDTO.getFullName() != null && !requestDTO.getService().isEmpty()
 					&& !requestDTO.getNin().isEmpty() && !requestDTO.getFullName().isEmpty()) {
 
-				PrnTaxHeadEntity existingTaxHeadProcess = prnTaxHeadRepository
-						.findByMosipProcess(requestDTO.getService());
-
-				if (!Objects.isNull(existingTaxHeadProcess)) {
-
-					generatePRNResponseDTO = getPrnURASOAP(requestDTO, existingTaxHeadProcess);
-
-					prnGeneratedDTO.setCode(generatePRNResponseDTO.getCode());
-					prnGeneratedDTO.setMessage(generatePRNResponseDTO.getMessage());
-					
+				/*PrnTaxHeadEntity existingTaxHeadProcess = prnTaxHeadRepository
+						.findByMosipProcess(requestDTO.getService());*/
 				
-					if (generatePRNResponseDTO.getData() != null) {
-					    
-					    // Check if the data is of type URAGetPRNResultDTO
-					    if (generatePRNResponseDTO.getData() instanceof URAGetPRNResultDTO) {
-					        URAGetPRNResultDTO uraData = (URAGetPRNResultDTO) generatePRNResponseDTO.getData();
-					        
-					        // Manually convert URAGetPRNResultDTO to GeneratePRNResultDTO
-					        GeneratePRNResultDTO convertedObject = new GeneratePRNResultDTO();
-					        convertedObject.setErrorCode(uraData.getErrorCode());
-					        convertedObject.setErrorDesc(uraData.getErrorDesc());
-					        convertedObject.setExpiryDate(uraData.getExpiryDate());
-					        convertedObject.setPrn(uraData.getPrn());
-					        convertedObject.setSearchCode(uraData.getSearchCode());
-					        convertedObject.setAmount(existingTaxHeadProcess.getTaxHeadAmount());
+				PayableServiceTypeEntity existingService = payableServiceTypeRepository
+						.findByServiceTypeCode(requestDTO.getService()); // if service type uses Code from dynamic fields
 
-					        prnGeneratedDTO.setData(convertedObject);
-					    } else {
-					        log.warn("Unexpected data type: {}", generatePRNResponseDTO.getData().getClass().getName());
-					        prnGeneratedDTO.setData(null);
-					    }
-					} else {
-					    prnGeneratedDTO.setData(null);
+				if (!Objects.isNull(existingService)) {
+					PrnTaxHeadEntity existingTaxHead = prnTaxHeadRepository.findByTaxHeadCode(existingService.getPrnTaxHeadCode().getTaxHeadCode());
+					
+					if(!Objects.isNull(existingTaxHead)) {
+						generatePRNResponseDTO = getPrnURASOAP(requestDTO, existingTaxHead);
+
+						prnGeneratedDTO.setCode(generatePRNResponseDTO.getCode());
+						prnGeneratedDTO.setMessage(generatePRNResponseDTO.getMessage());
+						
+						if (generatePRNResponseDTO.getData() != null) {
+						    
+						    // Check if the data is of type URAGetPRNResultDTO
+						    if (generatePRNResponseDTO.getData() instanceof URAGetPRNResultDTO) {
+						        URAGetPRNResultDTO uraData = (URAGetPRNResultDTO) generatePRNResponseDTO.getData();
+						        
+						        // Manually convert URAGetPRNResultDTO to GeneratePRNResultDTO
+						        GeneratePRNResultDTO convertedObject = new GeneratePRNResultDTO();
+						        convertedObject.setErrorCode(uraData.getErrorCode());
+						        convertedObject.setErrorDesc(uraData.getErrorDesc());
+						        convertedObject.setExpiryDate(uraData.getExpiryDate());
+						        convertedObject.setPrn(uraData.getPrn());
+						        convertedObject.setSearchCode(uraData.getSearchCode());
+						        convertedObject.setAmount(existingTaxHead.getTaxHeadAmount());
+
+						        prnGeneratedDTO.setData(convertedObject);
+						    } else {
+						        log.warn("Unexpected data type: {}", generatePRNResponseDTO.getData().getClass().getName());
+						        prnGeneratedDTO.setData(null);
+						    }
+						} else {
+						    prnGeneratedDTO.setData(null);
+						}
+
+						// Update the response based on the payment status code
+						if (generatePRNResponseDTO.getCode().equalsIgnoreCase("200")) {
+							response.setResponse(prnGeneratedDTO);
+						} else {
+
+							exception.setMessage(generatePRNResponseDTO.getMessage());
+							exception.setErrorCode(prnGeneratedDTO.getCode());
+							explist.add(exception);
+							response.setErrors(explist);
+						}
 					}
-
-					// Update the response based on the payment status code
-					if (generatePRNResponseDTO.getCode().equalsIgnoreCase("200")) {
-						response.setResponse(prnGeneratedDTO);
-					} else {
-
-						exception.setMessage(generatePRNResponseDTO.getMessage());
-						exception.setErrorCode(prnGeneratedDTO.getCode());
+					else {
+						exception.setMessage(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getMessage());
+						exception.setErrorCode(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getCode());
+						log.error(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getCode() + " -> "
+								+ AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getMessage());
 						explist.add(exception);
 						response.setErrors(explist);
+						
 					}
 				} else {
-					exception.setMessage(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getMessage());
-					exception.setErrorCode(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getCode());
-					log.error(AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getCode() + " -> "
-							+ AppErrorMessages.NPG_TAXHEAD_NOT_FOUND_FOR_SERVICE.getMessage());
+					exception.setMessage(AppErrorMessages.PAYABLE_SERVICE_TYPE_NOT_FOUND.getMessage());
+					exception.setErrorCode(AppErrorMessages.PAYABLE_SERVICE_TYPE_NOT_FOUND.getCode());
+					log.error(AppErrorMessages.PAYABLE_SERVICE_TYPE_NOT_FOUND.getCode() + " -> "
+							+ AppErrorMessages.PAYABLE_SERVICE_TYPE_NOT_FOUND.getMessage());
 					explist.add(exception);
 					response.setErrors(explist);
 				}
@@ -483,7 +521,7 @@ public class PrnService {
 	}
 
 	private GeneratePRNResponseDTO getPrnURASOAP(GeneratePRNRequestDTO requestDTO,
-			PrnTaxHeadEntity existingTaxHeadCode) {
+			PrnTaxHeadEntity existingTaxHead) {
 		log.info(AppConstants.STAGE_GENERATE_PRN + ":: getPrnURASOAP()");
 
 		GeneratePRNResponseDTO responseDTO = new GeneratePRNResponseDTO();
@@ -495,13 +533,13 @@ public class PrnService {
 			uraRequestDTO.setConcatenatedUsernamePasswordSignature(signedCredentials);
 			uraRequestDTO.setEncryptedConcatenatedUsernamePassword(encryptedCredentials);
 			uraRequestDTO.setReferenceNo("123"); // More clarification on this
-			uraRequestDTO.setTaxHead(existingTaxHeadCode.getTaxHeadCode());
+			uraRequestDTO.setTaxHead(existingTaxHead.getTaxHeadCode());
 
-			log.info("Tax Head Code" + existingTaxHeadCode.getTaxHeadCode());
+			log.info("Tax Head Code" + existingTaxHead.getTaxHeadCode());
 
 			uraRequestDTO.setTaxPayerName(requestDTO.getFullName());
 			uraRequestDTO.setTaxPayerNIN(requestDTO.getNin()); // More clarification on this
-			uraRequestDTO.setAmount(Double.parseDouble(existingTaxHeadCode.getTaxHeadAmount())); // Need to test this
+			uraRequestDTO.setAmount(Double.parseDouble(existingTaxHead.getTaxHeadAmount())); 
 
 			// Call the SOAP service
 			String response = soapServiceUtil.getPRN(uraRequestDTO);
@@ -666,6 +704,7 @@ public class PrnService {
 				} else {
 					/* save to db for prn_transaction_logs */
 					PrnTransactionEntity prnTransactionLogEntity = new PrnTransactionEntity();
+					prnTransactionLogEntity.setId(UUID.randomUUID().toString());
 					prnTransactionLogEntity.setPrn(requestDTO.getPrn());
 					prnTransactionLogEntity.setRegId(requestDTO.getRegId());
 					prnTransactionLogEntity.setCrBy(createdBySystem);
