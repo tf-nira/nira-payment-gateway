@@ -107,7 +107,7 @@ public class URASoapServiceUtil {
 	/**
 	 * Build the GetPRN SOAP request.
 	 */
-	private String buildGetPRNRequest(URASoapGeneratePRNRequestDTO requestDTO) {
+	/*private String buildGetPRNRequest(URASoapGeneratePRNRequestDTO requestDTO) {
 		return "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" "
 				+ "xmlns:tem=\"http://tempuri.org/\" xmlns:urap=\"http://schemas.datacontract.org/2004/07/URAPaymentGateway.DataContracts\">"
 				+ "<soapenv:Header/>" + "<soapenv:Body>" + "<tem:GetPRN>" + "<tem:PRNRequest>" + "<urap:Amount>"
@@ -123,7 +123,46 @@ public class URASoapServiceUtil {
 				+ requestDTO.getEncryptedConcatenatedUsernamePassword() + "</tem:encryptedConcatenatedUsernamePassword>"
 				+ "<tem:userName>" + requestDTO.getUserName() + "</tem:userName>" + "</tem:GetPRN>" + "</soapenv:Body>"
 				+ "</soapenv:Envelope>";
+	}*/
+	private String buildGetPRNRequest(URASoapGeneratePRNRequestDTO requestDTO) {
+	    StringBuilder soapRequest = new StringBuilder();
+
+	    soapRequest.append("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" ")
+	            .append("xmlns:tem=\"http://tempuri.org/\" xmlns:urap=\"http://schemas.datacontract.org/2004/07/URAPaymentGateway.DataContracts\">")
+	            .append("<soapenv:Header/>")
+	            .append("<soapenv:Body>")
+	            .append("<tem:GetPRN>")
+	            .append("<tem:PRNRequest>")
+	            .append("<urap:Amount>").append(requestDTO.getAmount()).append("</urap:Amount>")
+	            .append("<urap:ExpiryDays>21</urap:ExpiryDays>")
+	            .append("<urap:PaymentBankCode>STN</urap:PaymentBankCode>")
+	            .append("<urap:PaymentMode>CASH</urap:PaymentMode>")
+	            .append("<urap:PaymentType>DT</urap:PaymentType>")
+	            .append("<urap:ReferenceNo>").append(requestDTO.getReferenceNo()).append("</urap:ReferenceNo>")
+	            .append("<urap:SRCSystem>NIRA</urap:SRCSystem>")
+	            .append("<urap:TaxHead>").append(requestDTO.getTaxHead()).append("</urap:TaxHead>")
+	            .append("<urap:TaxPayerBankCode>STN</urap:TaxPayerBankCode>")
+	            .append("<urap:TaxPayerName>").append(requestDTO.getTaxPayerName()).append("</urap:TaxPayerName>");
+
+	    if (requestDTO.getTaxPayerNIN() != null && !requestDTO.getTaxPayerNIN().trim().isEmpty()) {
+	        soapRequest.append("<urap:TaxPayerNIN>").append(requestDTO.getTaxPayerNIN()).append("</urap:TaxPayerNIN>");
+	    }
+
+	    soapRequest.append("</tem:PRNRequest>")
+	            .append("<tem:concatenatedUsernamePasswordSignature>")
+	            .append(requestDTO.getConcatenatedUsernamePasswordSignature())
+	            .append("</tem:concatenatedUsernamePasswordSignature>")
+	            .append("<tem:encryptedConcatenatedUsernamePassword>")
+	            .append(requestDTO.getEncryptedConcatenatedUsernamePassword())
+	            .append("</tem:encryptedConcatenatedUsernamePassword>")
+	            .append("<tem:userName>").append(requestDTO.getUserName()).append("</tem:userName>")
+	            .append("</tem:GetPRN>")
+	            .append("</soapenv:Body>")
+	            .append("</soapenv:Envelope>");
+
+	    return soapRequest.toString();
 	}
+
 
 	/**
 	 * Build the CheckPRNStatus SOAP request.
