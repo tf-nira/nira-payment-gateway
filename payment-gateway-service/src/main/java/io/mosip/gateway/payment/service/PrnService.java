@@ -229,10 +229,12 @@ public class PrnService {
 
 				org.json.JSONObject jsonObject = new org.json.JSONObject(
 						objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
-				/*jsonObject.put("eligiblePaidForServiceTypes",
-						getServiceTypesForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));*/
-				jsonObject.put("eligiblePaidForServiceTypes",
+				
+				jsonObject.put("processFlowPaidFor",
 						getMosipProcessForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
+				
+				jsonObject.put("subServiceTypePaidFor",
+						getServiceTypeForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
 
 				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
@@ -250,10 +252,12 @@ public class PrnService {
 
 				org.json.JSONObject jsonObject = new org.json.JSONObject(
 						objectMapper.writeValueAsString(checkPRNStatusUraResponseDTO.getData()));
-				/*jsonObject.put("eligiblePaidForServiceTypes",
-						getServiceTypesForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));*/
-				jsonObject.put("eligiblePaidForServiceTypes",
+
+				jsonObject.put("processFlowPaidFor",
 						getMosipProcessForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
+				
+				jsonObject.put("subServiceTypePaidFor",
+						getServiceTypeForTaxHeadCode(jsonObject.get("taxHeadCode").toString()));
 
 				CheckPRNStatusResultDTO convertedObject = objectMapper.readValue(jsonObject.toString(),
 						CheckPRNStatusResultDTO.class);
@@ -279,7 +283,7 @@ public class PrnService {
 	 * existingTaxHeadEntity.getMosipProcess(); } return null; }
 	 */
 
-	private List<String> getServiceTypesForTaxHeadCode(String taxHeadCode) {
+	private String getServiceTypeForTaxHeadCode(String taxHeadCode) {
 		return payableServiceTypeRepository.findDistinctServiceTypeByTaxHeadCode(taxHeadCode);
 	}
 
@@ -473,7 +477,8 @@ public class PrnService {
 								convertedObject.setPrn(uraData.getPrn());
 								convertedObject.setSearchCode(uraData.getSearchCode());
 								convertedObject.setAmount(existingTaxHead.getTaxHeadAmount());
-
+								convertedObject.setCurrency(existingTaxHead.getCurrency());
+								
 								prnGeneratedDTO.setData(convertedObject);
 							} else {
 								log.warn("Unexpected data type: {}",

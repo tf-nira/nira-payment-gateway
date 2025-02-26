@@ -18,4 +18,5 @@ public class GeneratePRNResultDTO implements Serializable{/**
     private String prn;
     private String searchCode;
     private String amount;
+    private String currency;
 }

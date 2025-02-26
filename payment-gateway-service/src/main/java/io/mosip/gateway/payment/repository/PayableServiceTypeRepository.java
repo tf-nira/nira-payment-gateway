@@ -18,7 +18,7 @@ public interface PayableServiceTypeRepository extends JpaRepository<PayableServi
     String findMosipProcessByTaxHeadCode(@Param("taxHeadCode") String taxHeadCode);*/
 	
 	@Query("SELECT DISTINCT pst.serviceTypeCode FROM PayableServiceTypeEntity pst WHERE pst.prnTaxHeadCode.taxHeadCode = :taxHeadCode")
-    List<String> findDistinctServiceTypeByTaxHeadCode(@Param("taxHeadCode") String taxHeadCode);
+    String findDistinctServiceTypeByTaxHeadCode(@Param("taxHeadCode") String taxHeadCode);
 	
 	@Query("SELECT DISTINCT pst.mosipProcess FROM PayableServiceTypeEntity pst WHERE pst.prnTaxHeadCode.taxHeadCode = :taxHeadCode")
     String findMosipProcessByTaxHeadCode(@Param("taxHeadCode") String taxHeadCode);
