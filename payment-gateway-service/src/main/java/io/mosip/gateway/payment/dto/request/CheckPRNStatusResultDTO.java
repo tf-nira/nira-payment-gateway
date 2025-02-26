@@ -46,5 +46,6 @@ public class CheckPRNStatusResultDTO implements Serializable {
     private String taxPayerEmail;
     private String taxPayerName;
     private String villageName;
-	private String eligiblePaidForServiceTypes; // Helper field to verifying payments from MOSIP modules
+	private String subServiceTypePaidFor;
+	private String processFlowPaidFor;
 }
