@@ -1,5 +1,5 @@
-code,service_type_desc,mosip_process,is_active,prn_tax_head_code,cr_by,cr_dtimes
-COI,Change of information,UPDATE,TRUE,CI001,moonsglw,now()
-CISE,Correction in spelling errors or name variation or vernacular version of names or short names,UPDATE,TRUE,CEID01,moonsglw,now()
-LOST,Replacement of a Lost ID,LOST,TRUE,RLID01,moonsglw,now()
-DMG,Replacement of a Defaced or Damaged ID,LOST,TRUE,RDID01,moonsglw,now()
+id,code,service_type_desc,mosip_process,is_active,prn_tax_head_code,cr_by,cr_dtimes
+1,COI,Change of information,UPDATE,TRUE,CI001,moonsglw,now()
+2,CISE,Correction in spelling errors or name variation or vernacular version of names or short names,UPDATE,TRUE,CEID01,moonsglw,now()
+3,LOST,Replacement of a Lost ID,LOST,TRUE,RLID01,moonsglw,now()
+4,DMG,Replacement of a Defaced or Damaged ID,LOST,TRUE,RDID01,moonsglw,now()
