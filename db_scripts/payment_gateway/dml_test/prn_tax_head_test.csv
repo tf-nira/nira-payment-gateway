@@ -1,5 +1,9 @@
-tax_head_code,tax_head_desc,tax_head_amount,currency,is_active,cr_by,cr_dtimes
-CI001,Change Of Information-New ID Required,200000,UGX,TRUE,moonsglw,now()
-CEID01,Correction of Errors-New ID Required,200000,UGX,TRUE,moonsglw,now()
-NIRAFEES1,Replacement of a Lost ID,50000,UGX,TRUE,moonsglw,now()
-RDID01,Replacement of a Defaced or Damaged ID,200000,UGX,TRUE,moonsglw,now()
+id,tax_head_code,tax_head_desc,tax_head_amount,currency,is_active,cr_by,cr_dtimes
+1,NIRA2,Change Of Information-New ID Required,200000,UGX,TRUE,moonsglw,now()
+2,CEID01,Correction of Errors-New ID Required,200000,UGX,TRUE,moonsglw,now()
+3,NIRAFEES1,Replacement of a Lost ID,50000,UGX,TRUE,moonsglw,now()
+4,RDID01,Replacement of a Defaced or Damaged ID,200000,UGX,TRUE,moonsglw,now()
+5,IAID01,Issuance of an Alien ID,100,USD,TRUE,moonsglw,now()
+6,RID004,Renewal of ID,100,USD,TRUE,moonsglw,now()
+7,LID001,Replacement of a Lost ID,100,USD,TRUE,moonsglw,now()
+8,RDID003,Replacement of Defaced or Damaged ID,100,USD,TRUE,moonsglw,now()

@@ -11,13 +11,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.mosip.gateway.payment.dto.request.CheckPRNStatusPMSResultDTO;
 import io.mosip.gateway.payment.dto.request.CheckPRNStatusRequestDTO;
 import io.mosip.gateway.payment.dto.request.CheckPRNStatusResultDTO;
 import io.mosip.gateway.payment.dto.request.ConsumePRNRequestDTO;
 import io.mosip.gateway.payment.dto.request.GeneratePRNRequestDTO;
+import io.mosip.gateway.payment.dto.request.GeneratePrnPMSRequestDTO;
 import io.mosip.gateway.payment.dto.request.IsPRNRegInLogsRequestDTO;
 import io.mosip.gateway.payment.dto.response.ConsumePRNResponseDTO;
 import io.mosip.gateway.payment.dto.response.GeneratePRNResponseDTO;
+import io.mosip.gateway.payment.dto.response.GeneratePrnPMSResultDTO;
 import io.mosip.gateway.payment.dto.response.IsPRNRegInLogsResponseDTO;
 import io.mosip.gateway.payment.dto.response.MainMosipResponseDTO;
 import io.mosip.gateway.payment.dto.response.PRNGeneratedDTO;
@@ -51,15 +54,21 @@ public class PaymentServiceController {
 		return ResponseEntity.status(HttpStatus.OK).body(prnService.generatePrn(generatePRNRequestDTO));
 	}
 	
-	
-	/*
-	@GetMapping("/getAllConsumedPrns")
-	@Operation(summary = "getAllConsumedPrns", description = "Fetch all consumed prns", tags = "payment-service-controller")
-	public ResponseEntity<MainMosipResponseDTO<PrnsConsumedListMetaDTO>> getAllConsumedPrns(){
+	@PostMapping("/checkPrnStatusPMS")
+	@Operation(summary = "checkPrnStatusPMS", description = "Fetch the status of a given prn for MOSIP PMS module", tags = "payment-service-controller")
+	public ResponseEntity<MainMosipResponseDTO<CheckPRNStatusPMSResultDTO>> checkPrnStatusPMS(
+			@Valid @RequestBody(required = false) CheckPRNStatusRequestDTO prnStatusRequestDTO) throws Exception{
 		
 		return ResponseEntity.status(HttpStatus.OK)
-					.body(prnService.findAllConsumedPrns());
-	}*/
+				.body(prnService.getPrnStatusPMS(prnStatusRequestDTO));
+	}
+	
+	@PostMapping("/generatePrnPMS")
+	@Operation(summary = "generatePRNPMS", description = "Generate a new PRN for PMS", tags = "payment-service-controller")
+	public ResponseEntity<MainMosipResponseDTO<GeneratePrnPMSResultDTO>> generatePRNPMS(	
+			@Valid @RequestBody(required = false) GeneratePrnPMSRequestDTO generatePRNRequestDTO) throws Exception {
+		return ResponseEntity.status(HttpStatus.OK).body(prnService.generatePrnPMS(generatePRNRequestDTO));
+	}
 	
 	@PostMapping("/consumePrn")
 	@Operation(summary = "consumePrn", description = "Consume PRN as used", tags = "payment-service-controller")

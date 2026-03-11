@@ -1,7 +1,8 @@
 -- This table saves all the data related to a prn consumption - payment registration number.
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE pgateway.prn_consumed(
-	id character varying(36) NOT NULL,
+	id uuid NOT NULL DEFAULT uuid_generate_v4() NOT NULL,
 	prn character varying(13) NOT NULL,
 	prn_data character varying(2000) NOT NULL,
 	is_prn_valid boolean NOT NULL,
