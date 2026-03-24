@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - tf_nira_dev
+      - tf_nira_preprod
 
 jobs:
   build:
