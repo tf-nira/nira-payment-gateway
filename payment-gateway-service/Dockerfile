@@ -73,7 +73,7 @@ RUN mkdir -p ${loader_path}
 
 ENV loader_path_env=${loader_path}
 
-COPY ./target/payment-gateway-service-*.jar payment-gateway-service.jar
+COPY --from=builder /build/target/payment-gateway-service-*.jar payment-gateway-service.jar
 
 # change permissions of file inside working dir
 RUN chown -R ${container_user}:${container_user} /home/${container_user}
