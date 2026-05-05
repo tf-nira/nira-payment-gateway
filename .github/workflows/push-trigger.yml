@@ -10,7 +10,7 @@ on:
       - master
       - nira_dev
       - tf_nira_dev
-      - nira_dev_foreign
+      - niradev_foreign
   
 jobs:
   build-docker-nira-payments-gateway:
