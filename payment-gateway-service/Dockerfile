@@ -1,3 +1,9 @@
+FROM maven:3.9.9-eclipse-temurin-11 AS builder
+
+WORKDIR /build
+COPY . .
+RUN mvn clean package -DskipTests
+
 FROM eclipse-temurin:11-jdk
 
 ARG SOURCE
