@@ -2,6 +2,8 @@ package io.mosip.gateway.payment.dto.ura;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.module.afterburner.deser.SettableStringFieldProperty;
+
 import lombok.Data;
 
 @Data
@@ -17,6 +19,6 @@ public class URASoapGeneratePRNRequestDTO implements Serializable {
 	private String taxPayerName;
 	private String taxPayerNIN;
 	private String taxHead;
-	private String referenceNo;
-	private double amount;
+	private Integer amount;
+	private String currency;
 }

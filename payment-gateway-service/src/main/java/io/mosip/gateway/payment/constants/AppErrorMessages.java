@@ -37,9 +37,10 @@ public enum AppErrorMessages {
 	URA_INVALID_PAYMENT_MODE(AppConstants.GENERATE_PRN + "006", "Invalid Payment Mode"),
 	URA_INVALID_TAX_HEAD(AppConstants.GENERATE_PRN + "007", "Invalid Tax Head"),
 	URA_INVALID_BANK_CODE(AppConstants.GENERATE_PRN + "008", "Invalid Bank Code"),
-	PAYABLE_SERVICE_TYPE_NOT_FOUND(AppConstants.MAIN_APP + "019", "Service type not found");
+	PAYABLE_SERVICE_TYPE_NOT_FOUND(AppConstants.MAIN_APP + "019", "Service type not found"),
+	URA_SERVICE_UNREACHABLE("NPG-URA-503","Unable to reach URA service. Please retry later."),
+	PARTNER_TYPE_GROUP_NOT_FOR_PMS(AppConstants.GENERATE_PRN + "PMS001", "Partner type/group not configured for PMS");
 	
-
 	private final String errorMessage; 
 	private final String errorCode;
 
