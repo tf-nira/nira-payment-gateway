@@ -1,9 +1,3 @@
-FROM maven:3.9.9-eclipse-temurin-11 AS builder
-
-WORKDIR /build
-COPY . .
-RUN mvn clean package -DskipTests
-
 FROM eclipse-temurin:11-jdk
 
 ARG SOURCE
@@ -79,7 +73,7 @@ RUN mkdir -p ${loader_path}
 
 ENV loader_path_env=${loader_path}
 
-COPY --from=builder /build/target/payment-gateway-service-*.jar payment-gateway-service.jar
+COPY ./target/payment-gateway-service-*.jar payment-gateway-service.jar
 
 # change permissions of file inside working dir
 RUN chown -R ${container_user}:${container_user} /home/${container_user}
