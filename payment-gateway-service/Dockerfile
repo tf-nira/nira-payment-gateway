@@ -1,3 +1,11 @@
+# -------- Stage 1: Build JAR --------
+FROM maven:3.9.6-eclipse-temurin-11 AS build
+
+WORKDIR /build
+COPY . .
+RUN mvn clean package -DskipTests
+
+# -------- Stage 2: Runtime --------
 FROM eclipse-temurin:11-jdk
 
 ARG SOURCE
