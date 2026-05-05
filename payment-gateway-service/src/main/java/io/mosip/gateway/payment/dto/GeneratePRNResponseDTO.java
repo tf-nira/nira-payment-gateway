@@ -1,4 +1,4 @@
-package io.mosip.gateway.payment.dto.response;
+package io.mosip.gateway.payment.dto;
 
 import lombok.Data;
 
@@ -8,7 +8,5 @@ public class GeneratePRNResponseDTO  {
 	private String code;
 	private String message;
 	private Object data;
-	
-	private String amountUsed;
 
 }

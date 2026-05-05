@@ -3,3 +3,7 @@ id,code,service_type_desc,mosip_process,is_active,prn_tax_head_code,cr_by,cr_dti
 2,CISE,Correction in spelling errors or name variation or vernacular version of names or short names,UPDATE,TRUE,CEID01,moonsglw,now()
 3,LOST,Replacement of a Lost ID,LOST,TRUE,NIRAFEES1,moonsglw,now()
 4,DMG,Replacement of a Defaced or Damaged ID,LOST,TRUE,RDID01,moonsglw,now()
+5,NEWAID,New Registration of Aliens,NEW,TRUE,IAID01,moonsglw,now()
+6,LOSTAID,Replacement of AIN Card,LOST,TRUE,LID001,moonsglw,now()
+7,DMGAID,Replacement of defaced or damaged identification card,LOST,TRUE,RDID003,moonsglw,now()
+8,RENAID,Renewal or Reactivation of AIN,RENEWAL,TRUE,RID004,moonsglw,now()

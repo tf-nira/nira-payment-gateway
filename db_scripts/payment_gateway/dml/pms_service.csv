@@ -1,0 +1,6 @@
+id,service_desc,partner_type,partner_group,prn_tax_head_code,is_active,cr_by,cr_dtimes
+1,Access and Use - Gov,ACCESS,GOV,RECO010,TRUE,moonsglw,now()
+2,Access and Use - Private,ACCESS,PRIVATE,RECORD100,TRUE,moonsglw,now()
+3,Access and Use - Foreign,ACCESS,FORIEGN,AUI5M,TRUE,moonsglw,now()
+4,Verify - Gov,VERIFY,GOV,VRECORD114,TRUE,moonsglw,now()
+5,Verify - Private,VERIFY,PRIVATE,VRECORD112,TRUE,moonsglw,now()
